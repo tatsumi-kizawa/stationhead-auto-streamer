@@ -1,0 +1,21 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/anthropics/claude-code@main/settings_schema.json",
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)"
+    ],
+    "deny": []
+  },
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "todoFeatureEnabled": true,
+  "verbose": false,
+  "compactEnabled": true,
+  "cleanupPeriodDays": 30
+}
