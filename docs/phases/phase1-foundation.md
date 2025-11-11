@@ -91,14 +91,20 @@
 - [ ] `docs/technical-decisions.md` - 技術選定の記録
 
 ### 4. Stationhead Web UI構造調査 🔍
-**ステータス**: ⚪ 未着手
+**ステータス**: 🟡 進行中
 **優先度**: 最高
 **推奨エージェント**: `@browser-automation`
 **推奨コマンド**: `/investigate-stationhead`
+**開始日**: 2025-11-11
 
 #### 調査項目
-- [ ] Stationhead URLの特定
-- [ ] ログインページの構造とセレクタ
+- [x] Stationhead URLの特定
+  - ログインページ: `https://www.stationhead.com/on/sign-in`
+  - ログイン後: `https://www.stationhead.com/on/profile`
+- [x] ログインページの構造とセレクタ
+  - **重要発見**: CSS-in-JSでクラス名が動的に変化する
+  - 安定セレクタ: `aria-label`, `placeholder`, テキストベース
+- [x] ログイン自動化の実装
 - [ ] Spotify連携フロー
 - [ ] 配信設定画面の要素
 - [ ] プレイリスト選択UI
@@ -107,18 +113,35 @@
 - [ ] ネットワークリクエストの監視
 - [ ] APIエンドポイントの有無
 
+#### 重要な発見
+1. **CSS-in-JSによる動的クラス名**:
+   - Stationheadはstyled-components等を使用
+   - クラス名は実行ごとに変化: `sc-jqNall hXhDdg` → `sc-jqNall giaLcO`
+   - **クラス名ベースのセレクタは使用禁止**
+
+2. **安定したセレクタ戦略**:
+   - 優先順位: `aria-label` > `placeholder` > テキストベース > id
+   - 例: `page.locator('button:has-text("Log in")').last()`
+
+3. **環境変数読み込みの問題**:
+   - シェル環境変数が優先される
+   - 解決策: `dotenv.config({ path: envPath })` で明示的にパス指定
+
 #### 調査方法
-1. Playwright MCPを使用してページにアクセス
-2. スクリーンショット取得
-3. DOM構造の確認
-4. セレクタの特定（data-testid、id、class等）
-5. ネットワークタブの監視
-6. Console出力の確認
+1. ✅ Chrome DevTools MCPを使用してページ構造を分析
+2. ✅ Playwrightでログインフローを実装
+3. ✅ ボタンクリック方法を複数テストして最適解を発見
+4. ✅ スクリーンショット取得
+5. ⏳ ダッシュボード・配信UIの調査（次のステップ）
 
 #### 成果物
-- [ ] `docs/stationhead-ui-investigation.md` - 調査結果レポート
-- [ ] `screenshots/` - UI のスクリーンショット
-- [ ] `docs/api-endpoints.md` - 発見されたAPIエンドポイント（あれば）
+- [x] `docs/stationhead-ui-investigation.md` - 調査結果レポート（ログインフロー完了）
+- [x] `scripts/test-login.ts` - ログイン自動化スクリプト（動作確認済み）
+- [x] `scripts/debug-login-button-click.ts` - ボタンクリックデバッグ
+- [x] `scripts/analyze-login-button.ts` - ボタン詳細分析
+- [x] `data/successful-login-method.json` - 成功したログイン方法の記録
+- [x] `screenshots/test-login-*.png` - ログインフローのスクリーンショット
+- [ ] 配信UI関連の調査成果物（次のステップ）
 
 ### 5. 認証方式の調査と実装方針決定 🔍
 **ステータス**: ⚪ 未着手

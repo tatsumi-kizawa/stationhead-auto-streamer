@@ -53,12 +53,52 @@
 3. すべての関数に型定義を付与
 4. エラーハンドリングを必ず実装
 
+### 環境変数の取り扱い
+**重要**: .envファイルの読み込みは必ず明示的なパスを指定すること
+1. **スクリプトでの.env読み込み**:
+   ```typescript
+   import * as dotenv from 'dotenv';
+   import * as path from 'path';
+
+   // プロジェクトルートの.envファイルを明示的に読み込む
+   const envPath = path.join(__dirname, '../.env');
+   dotenv.config({ path: envPath });
+   ```
+2. シェル環境変数が優先されることを避けるため、パスを明示する
+3. デバッグ時は読み込まれた環境変数を確認すること
+
 ### ブラウザ自動化の原則
-1. 安定したセレクタを優先（data-testid > id > class）
-2. 適切な待機処理を実装（ページロード、要素表示）
-3. エラー時はスクリーンショットを取得
-4. リトライロジックを実装（最大3回）
-5. Playwright MCPサーバーを活用してブラウザ操作を効率化
+**重要**: Stationheadは**CSS-in-JS（styled-components等）を使用しており、クラス名は動的に変化する**
+- 例: `sc-jqNall hXhDdg` → `sc-jqNall giaLcO` （ビルドごとに異なる）
+- **クラス名単体でのセレクタは絶対に使用しない**
+
+1. **セレクタの優先順位**（Stationhead向け）:
+   - **最優先**: `data-testid`属性（存在する場合）
+   - **第2優先**: `aria-label`属性
+   - **第3優先**: テキストベースのセレクタ (`button:has-text("Log in")`)
+   - **第4優先**: id属性（存在する場合）
+   - **使用禁止**: クラス名単体 (`button.sc-jqNall.hXhDdg` など)
+
+2. **推奨セレクタ例**:
+   ```typescript
+   // ✅ 良い例（安定・推奨）
+   page.locator('[aria-label="Log in"]')              // aria-label優先
+   page.locator('button:has-text("Log in")').last()   // テキスト + 位置指定
+   page.locator('input[placeholder="Email"]')         // placeholder属性
+
+   // ❌ 悪い例（クラス名は変わるので絶対NG）
+   page.locator('.sc-jqNall.hXhDdg')
+   page.locator('button.sc-jqNall.hXhDdg')
+   ```
+
+3. **クリック時の注意点**:
+   - `{ force: true }` オプションを使用して確実にクリック
+   - 例: `await button.click({ force: true });`
+
+4. 適切な待機処理を実装（ページロード、要素表示）
+5. エラー時はスクリーンショットを取得
+6. リトライロジックを実装（最大3回）
+7. Playwright MCPサーバーを活用してブラウザ操作を効率化
 
 ### スケジューラーの原則
 1. 時間の重複を必ずチェック

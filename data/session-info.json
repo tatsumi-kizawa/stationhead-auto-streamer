@@ -1,0 +1,58 @@
+{
+  "cookies": [
+    {
+      "name": "AMP_MKTG_2dbde38c73",
+      "domain": ".stationhead.com",
+      "path": "/",
+      "expires": 1794399733,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga",
+      "domain": ".stationhead.com",
+      "path": "/",
+      "expires": 1797423734.523846,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "g_state",
+      "domain": "www.stationhead.com",
+      "path": "/",
+      "expires": 1778415737,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "NID",
+      "domain": ".google.com",
+      "path": "/",
+      "expires": 1778674943.084625,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "AMP_2dbde38c73",
+      "domain": ".stationhead.com",
+      "path": "/",
+      "expires": 1794399743,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_PT5N25TC60",
+      "domain": ".stationhead.com",
+      "path": "/",
+      "expires": 1797423743.890037,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ]
+}

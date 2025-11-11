@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-11-11T12:22:25.857Z",
+  "loginSuccess": true,
+  "finalUrl": "https://www.stationhead.com/on/profile",
+  "pageTitle": "Stationhead",
+  "dashboardElements": {
+    "totalButtons": 9,
+    "totalLinks": 1,
+    "spotifyElements": [],
+    "streamingElements": [
+      {
+        "text": "Streaming service",
+        "className": "sc-gVjrzA kLErdX",
+        "ariaLabel": null
+      }
+    ]
+  }
+}
