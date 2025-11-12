@@ -1,0 +1,292 @@
+{
+  "playlistCandidates": [
+    {
+      "index": 0,
+      "tagName": "DIV",
+      "className": "sc-hXjjWa gaarrA",
+      "id": "",
+      "text": "New Music Wednesday79 songsAll songs",
+      "innerHTML": "<div class=\"sc-svxSF imTmsb\" style=\"margin-right: auto;\"><div class=\"sc-eyZspR dQIdih\"><img alt=\"Music item image\" src=\"https://i.scdn.co/image/ab67706f0000000247bbee558e7a6dce7bbe545d\" class=\"sc-kwnQKg hyvszf\"></div><div class=\"sc-dgObMS hdtucn\" style=\"margin-left: 8px;\"><div class=\"sc-gKkWNN idthc",
+      "attributes": {
+        "class": "sc-hXjjWa gaarrA"
+      },
+      "role": null,
+      "ariaLabel": null,
+      "tabIndex": null,
+      "cursor": "auto",
+      "pointerEvents": "auto",
+      "display": "flex",
+      "hasOnClick": false,
+      "position": {
+        "x": 421,
+        "y": 228,
+        "width": 476,
+        "height": 44
+      },
+      "parent": {
+        "tagName": "DIV",
+        "className": "sc-hIJymb bMylcA",
+        "role": null,
+        "cursor": "auto"
+      },
+      "children": [
+        {
+          "tagName": "DIV",
+          "className": "sc-svxSF imTmsb",
+          "text": "New Music Wednesday79 songs"
+        },
+        {
+          "tagName": "BUTTON",
+          "className": "sc-eyPRbY ewouUj",
+          "text": "All songs"
+        }
+      ],
+      "childCount": 2,
+      "depth": 11
+    },
+    {
+      "index": 1,
+      "tagName": "DIV",
+      "className": "sc-svxSF imTmsb",
+      "id": "",
+      "text": "New Music Wednesday79 songs",
+      "innerHTML": "<div class=\"sc-eyZspR dQIdih\"><img alt=\"Music item image\" src=\"https://i.scdn.co/image/ab67706f0000000247bbee558e7a6dce7bbe545d\" class=\"sc-kwnQKg hyvszf\"></div><div class=\"sc-dgObMS hdtucn\" style=\"margin-left: 8px;\"><div class=\"sc-gKkWNN idthcV\"><p font-size=\"16\" class=\"sc-kKgRpv jjHkHs\">New Music W",
+      "attributes": {
+        "class": "sc-svxSF imTmsb",
+        "style": "margin-right: auto;"
+      },
+      "role": null,
+      "ariaLabel": null,
+      "tabIndex": null,
+      "cursor": "default",
+      "pointerEvents": "auto",
+      "display": "flex",
+      "hasOnClick": true,
+      "position": {
+        "x": 421,
+        "y": 228,
+        "width": 238,
+        "height": 44
+      },
+      "parent": {
+        "tagName": "DIV",
+        "className": "sc-hXjjWa gaarrA",
+        "role": null,
+        "cursor": "auto"
+      },
+      "children": [
+        {
+          "tagName": "DIV",
+          "className": "sc-eyZspR dQIdih",
+          "text": ""
+        },
+        {
+          "tagName": "DIV",
+          "className": "sc-dgObMS hdtucn",
+          "text": "New Music Wednesday79 songs"
+        }
+      ],
+      "childCount": 2,
+      "depth": 12
+    },
+    {
+      "index": 2,
+      "tagName": "DIV",
+      "className": "sc-dgObMS hdtucn",
+      "id": "",
+      "text": "New Music Wednesday79 songs",
+      "innerHTML": "<div class=\"sc-gKkWNN idthcV\"><p font-size=\"16\" class=\"sc-kKgRpv jjHkHs\">New Music Wednesday</p></div><div class=\"sc-CXICU NDMk\"><p font-size=\"12\" color=\"#9A9AAB\" class=\"sc-frZGkO gsuIEe\">79 songs</p></div>",
+      "attributes": {
+        "class": "sc-dgObMS hdtucn",
+        "style": "margin-left: 8px;"
+      },
+      "role": null,
+      "ariaLabel": null,
+      "tabIndex": null,
+      "cursor": "default",
+      "pointerEvents": "auto",
+      "display": "flex",
+      "hasOnClick": false,
+      "position": {
+        "x": 473,
+        "y": 228,
+        "width": 176,
+        "height": 44
+      },
+      "parent": {
+        "tagName": "DIV",
+        "className": "sc-svxSF imTmsb",
+        "role": null,
+        "cursor": "default"
+      },
+      "children": [
+        {
+          "tagName": "DIV",
+          "className": "sc-gKkWNN idthcV",
+          "text": "New Music Wednesday"
+        },
+        {
+          "tagName": "DIV",
+          "className": "sc-CXICU NDMk",
+          "text": "79 songs"
+        }
+      ],
+      "childCount": 2,
+      "depth": 13
+    },
+    {
+      "index": 3,
+      "tagName": "DIV",
+      "className": "sc-CXICU NDMk",
+      "id": "",
+      "text": "79 songs",
+      "innerHTML": "<p font-size=\"12\" color=\"#9A9AAB\" class=\"sc-frZGkO gsuIEe\">79 songs</p>",
+      "attributes": {
+        "class": "sc-CXICU NDMk"
+      },
+      "role": null,
+      "ariaLabel": null,
+      "tabIndex": null,
+      "cursor": "default",
+      "pointerEvents": "auto",
+      "display": "flex",
+      "hasOnClick": false,
+      "position": {
+        "x": 473,
+        "y": 255,
+        "width": 176,
+        "height": 15
+      },
+      "parent": {
+        "tagName": "DIV",
+        "className": "sc-dgObMS hdtucn",
+        "role": null,
+        "cursor": "default"
+      },
+      "children": [
+        {
+          "tagName": "P",
+          "className": "sc-frZGkO gsuIEe",
+          "text": "79 songs"
+        }
+      ],
+      "childCount": 1,
+      "depth": 14
+    },
+    {
+      "index": 4,
+      "tagName": "P",
+      "className": "sc-frZGkO gsuIEe",
+      "id": "",
+      "text": "79 songs",
+      "innerHTML": "79 songs",
+      "attributes": {
+        "font-size": "12",
+        "color": "#9A9AAB",
+        "class": "sc-frZGkO gsuIEe"
+      },
+      "role": null,
+      "ariaLabel": null,
+      "tabIndex": null,
+      "cursor": "default",
+      "pointerEvents": "auto",
+      "display": "block",
+      "hasOnClick": false,
+      "position": {
+        "x": 473,
+        "y": 255,
+        "width": 52,
+        "height": 15
+      },
+      "parent": {
+        "tagName": "DIV",
+        "className": "sc-CXICU NDMk",
+        "role": null,
+        "cursor": "default"
+      },
+      "children": [],
+      "childCount": 0,
+      "depth": 15
+    },
+    {
+      "index": 5,
+      "tagName": "BUTTON",
+      "className": "sc-eyPRbY ewouUj",
+      "id": "",
+      "text": "All songs",
+      "innerHTML": "<div class=\"sc-iapSTs ZtWfc\" style=\"width: 24px; height: 24px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"#9165FF\" style=\"height: 100%;\"><path d=\"M11 19v-6H5v-2h6V5h2v6h6v2h-6v6h-2Z\"></path></svg></div><p class=\"sc-ekqfrZ hztVVH\">All songs</p>",
+      "attributes": {
+        "class": "sc-eyPRbY ewouUj",
+        "style": "margin-left: 20px;"
+      },
+      "role": null,
+      "ariaLabel": null,
+      "tabIndex": null,
+      "cursor": "pointer",
+      "pointerEvents": "auto",
+      "display": "flex",
+      "hasOnClick": true,
+      "position": {
+        "x": 797,
+        "y": 228,
+        "width": 100,
+        "height": 44
+      },
+      "parent": {
+        "tagName": "DIV",
+        "className": "sc-hXjjWa gaarrA",
+        "role": null,
+        "cursor": "auto"
+      },
+      "children": [
+        {
+          "tagName": "DIV",
+          "className": "sc-iapSTs ZtWfc",
+          "text": ""
+        },
+        {
+          "tagName": "P",
+          "className": "sc-ekqfrZ hztVVH",
+          "text": "All songs"
+        }
+      ],
+      "childCount": 2,
+      "depth": 12
+    },
+    {
+      "index": 6,
+      "tagName": "P",
+      "className": "sc-ekqfrZ hztVVH",
+      "id": "",
+      "text": "All songs",
+      "innerHTML": "All songs",
+      "attributes": {
+        "class": "sc-ekqfrZ hztVVH"
+      },
+      "role": null,
+      "ariaLabel": null,
+      "tabIndex": null,
+      "cursor": "pointer",
+      "pointerEvents": "auto",
+      "display": "block",
+      "hasOnClick": false,
+      "position": {
+        "x": 827,
+        "y": 240,
+        "width": 70,
+        "height": 20
+      },
+      "parent": {
+        "tagName": "BUTTON",
+        "className": "sc-eyPRbY ewouUj",
+        "role": null,
+        "cursor": "pointer"
+      },
+      "children": [],
+      "childCount": 0,
+      "depth": 13
+    }
+  ],
+  "modalExists": false,
+  "totalElements": 1425
+}

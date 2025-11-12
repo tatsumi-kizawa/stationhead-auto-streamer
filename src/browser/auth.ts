@@ -1,4 +1,4 @@
-import { Browser, BrowserContext, Page } from 'playwright';
+import { Browser, BrowserContext } from 'playwright';
 import { SessionManager } from './session';
 import * as path from 'path';
 
@@ -23,12 +23,7 @@ export class StationheadAuth {
    * @param password Stationheadのパスワード
    * @param sessionName セッションファイル名（オプション）
    */
-  constructor(
-    browser: Browser,
-    email: string,
-    password: string,
-    sessionName?: string
-  ) {
+  constructor(browser: Browser, email: string, password: string, sessionName?: string) {
     this.browser = browser;
     this.email = email;
     this.password = password;

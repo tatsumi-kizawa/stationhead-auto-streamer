@@ -56,6 +56,14 @@ data/sessions/
 test-results/
 playwright-report/
 
+# Test artifacts
+screenshots/*.png
+data/*.json
+!data/.gitkeep
+
+# Archives (development history)
+**/archive/
+
 # TypeScript
 *.tsbuildinfo
 

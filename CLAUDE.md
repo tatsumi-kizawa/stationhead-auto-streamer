@@ -67,6 +67,21 @@
 2. シェル環境変数が優先されることを避けるため、パスを明示する
 3. デバッグ時は読み込まれた環境変数を確認すること
 
+**`$`文字を含むパスワードの扱い**:
+- dotenvライブラリは`$`を変数展開として扱うため、.envファイルでは`\$`とエスケープする
+- `.env`ファイル内: `SPOTIFY_PASSWORD="Alle!2025\$t2"`
+- コードでは直接パースする関数を使用:
+  ```typescript
+  function getSpotifyPassword(): string {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const match = envContent.match(/SPOTIFY_PASSWORD="([^"]+)"/);
+    if (match && match[1]) {
+      return match[1].replace(/\\(.)/g, '$1');
+    }
+    return process.env.SPOTIFY_PASSWORD || '';
+  }
+  ```
+
 ### ブラウザ自動化の原則
 **重要**: Stationheadは**CSS-in-JS（styled-components等）を使用しており、クラス名は動的に変化する**
 - 例: `sc-jqNall hXhDdg` → `sc-jqNall giaLcO` （ビルドごとに異なる）
@@ -91,14 +106,19 @@
    page.locator('button.sc-jqNall.hXhDdg')
    ```
 
-3. **クリック時の注意点**:
+3. **特殊文字を含むパスワード入力**:
+   - `fill()`や`type()`では特殊文字（`$`, `!`など）が正しく入力されない場合がある
+   - **推奨**: `page.keyboard.type(password, { delay: 100 })` を使用
+   - フィールドをクリックしてフォーカスしてから入力する
+
+4. **クリック時の注意点**:
    - `{ force: true }` オプションを使用して確実にクリック
    - 例: `await button.click({ force: true });`
 
-4. 適切な待機処理を実装（ページロード、要素表示）
-5. エラー時はスクリーンショットを取得
-6. リトライロジックを実装（最大3回）
-7. Playwright MCPサーバーを活用してブラウザ操作を効率化
+5. 適切な待機処理を実装（ページロード、要素表示）
+6. エラー時はスクリーンショットを取得
+7. リトライロジックを実装（最大3回）
+8. Playwright MCPサーバーを活用してブラウザ操作を効率化
 
 ### スケジューラーの原則
 1. 時間の重複を必ずチェック
@@ -126,26 +146,76 @@
 stationhead-auto-streamer/
 ├── src/
 │   ├── browser/          # ブラウザ自動化
+│   │   ├── auth.ts       # 認証処理
+│   │   └── playlist.ts   # プレイリスト操作
+│   ├── test-helpers/     # テスト用共通関数
 │   ├── scheduler/        # スケジューラー
 │   ├── notification/     # 通知
 │   ├── logger/           # ログ
 │   ├── ui/               # UI
 │   └── config/           # 設定管理
+├── scripts/              # テストスクリプト
+│   ├── test-go-on-air.ts        # 完全フロー（Spotify連携含む）
+│   ├── test-playlist-selection.ts # プレイリスト選択のみ
+│   └── archive/          # 開発履歴（削除可能）
 ├── data/                 # データ保存
+│   └── archive/          # 古いテストデータ
+├── screenshots/          # スクリーンショット
+│   └── archive/          # 古いスクリーンショット
 ├── logs/                 # ログファイル
 ├── tests/                # テストコード
 ├── docs/                 # ドキュメント
 └── .claude/              # Claude Code設定
 ```
 
+## テスト実行とクリーンアップ手順
+
+### テスト実行
+```bash
+# 初回セットアップ（Spotify連携まで）
+npm run test:go-on-air
+
+# プレイリスト選択のみ（既存セッション前提）
+npm run test:playlist
+```
+
+### テスト完了後のクリーンアップ
+```bash
+# 1. テスト成果物のクリーンアップ（スクリーンショット、JSONファイル）
+npm run clean
+
+# 2. アーカイブも含めて完全削除
+npm run clean:all
+
+# 3. コードの整形
+npm run format
+
+# 4. リント実行
+npm run lint:fix
+
+# 5. 型チェック
+npm run typecheck
+```
+
+### クリーンアップの内容
+- `npm run clean`: `screenshots/*.png`, `data/*.json` を削除
+- `npm run clean:all`: 上記 + `archive/` ディレクトリも削除
+- `.gitignore`: テスト成果物とarchiveは自動的に除外される
+
 ## 開発フェーズ
 現在: **Phase 1 - 基盤構築（要調査フェーズ含む）**
 
+完了したステップ:
+1. ✅ プロジェクトセットアップ（package.json、tsconfig.json等）
+2. ✅ StationheadのWeb UI構造調査（Playwright使用）
+3. ✅ 認証方式の実装（セッション永続化対応）
+4. ✅ ブラウザ自動化の基本実装（ログイン、Spotify連携）
+5. ✅ プレイリスト選択機能の実装
+
 次のステップ:
-1. プロジェクトセットアップ（package.json、tsconfig.json等）
-2. StationheadのWeb UI構造調査（Playwright MCPを使用）
-3. 認証方式の調査と実装方針決定
-4. ブラウザ自動化の基本実装
+- Spotify連携の完全動作確認
+- プレイリストループ再生機能
+- 配信開始/終了の自動化
 
 ## 注意事項
 - StationheadのUIは変更される可能性があるため、柔軟な設計を心がける
@@ -153,3 +223,4 @@ stationhead-auto-streamer/
 - プレイリスト終了検知の方法は要調査
 - 長時間運用時のメモリリーク対策が必要
 - Stationheadの利用規約に抵触しないか確認すること
+- **Spotifyログイン**: 特殊文字パスワードは`keyboard.type()`を使用

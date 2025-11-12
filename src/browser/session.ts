@@ -1,4 +1,4 @@
-import { Browser, BrowserContext, Page } from 'playwright';
+import { Browser, BrowserContext } from 'playwright';
 import * as fs from 'fs';
 import * as path from 'path';
 

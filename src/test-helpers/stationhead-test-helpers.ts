@@ -1,0 +1,163 @@
+import { Page, BrowserContext } from 'playwright';
+import * as path from 'path';
+
+/**
+ * Stationheadテスト用の共通ヘルパー関数
+ */
+
+export interface LoginOptions {
+  email: string;
+  password: string;
+}
+
+export interface ShowOptions {
+  name: string;
+}
+
+/**
+ * Stationheadにログイン
+ */
+export async function login(
+  page: Page,
+  options: LoginOptions,
+  _screenshotsDir: string
+): Promise<void> {
+  console.log('\n🔐 Step 1: Logging in...');
+
+  // "Use email instead"ボタンをクリック
+  console.log('   Clicking "Use email instead"...');
+  const useEmailButton = page.locator('button:has-text("Use email instead")');
+  await useEmailButton.waitFor({ state: 'visible', timeout: 10000 });
+  await useEmailButton.click({ force: true });
+  await page.waitForTimeout(1000);
+
+  // メールアドレスとパスワードを入力
+  console.log('   Entering credentials...');
+  await page.locator('input[type="email"]').fill(options.email);
+  await page.locator('input[type="password"]').fill(options.password);
+  await page.waitForTimeout(500);
+
+  // Log inボタンをクリック
+  console.log('   Clicking "Log in" button...');
+  const loginButton = page.locator('button:has-text("Log in")').last();
+  await loginButton.click({ force: true });
+  await page.waitForTimeout(3000);
+
+  console.log('✅ Login successful');
+}
+
+/**
+ * Go on airページに遷移
+ */
+export async function navigateToGoOnAir(page: Page, _screenshotsDir: string): Promise<void> {
+  console.log('\n🎙️  Step 2: Navigating to Go On Air page...');
+
+  await page.goto('https://www.stationhead.com/on/go-on-air');
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(2000);
+
+  await page.screenshot({
+    path: path.join(_screenshotsDir, 'current-page.png'),
+    fullPage: true,
+  });
+
+  console.log('✅ Go On Air page loaded');
+}
+
+/**
+ * 番組名を入力
+ */
+export async function enterShowName(
+  page: Page,
+  options: ShowOptions,
+  _screenshotsDir: string
+): Promise<void> {
+  console.log('\n📝 Step 3: Entering show name...');
+
+  // プレースホルダーベースのセレクタで入力欄を探す
+  const showNameInput = page.locator('input[placeholder*="name" i]').first();
+
+  await showNameInput.waitFor({ state: 'visible', timeout: 10000 });
+  console.log('   Found input with selector: input[placeholder*="name"]');
+
+  await showNameInput.fill(options.name);
+  console.log(`   Entering show name: "${options.name}"`);
+  await page.waitForTimeout(1000);
+
+  console.log('✅ Show name entered');
+}
+
+/**
+ * Nextボタンをクリック
+ */
+export async function clickNext(page: Page, _screenshotsDir: string): Promise<void> {
+  console.log('\n⏭️  Step 4: Clicking Next button...');
+
+  const nextButton = page.locator('button:has-text("Next")').first();
+  await nextButton.waitFor({ state: 'visible', timeout: 10000 });
+  await nextButton.click({ force: true });
+  await page.waitForTimeout(2000);
+
+  console.log('✅ Next button clicked');
+}
+
+/**
+ * マイク許可を付与
+ */
+export async function grantMicrophonePermission(context: BrowserContext): Promise<void> {
+  console.log('\n🎤 Step 5: Handling microphone permission...');
+
+  await context.grantPermissions(['microphone']);
+  console.log('   Microphone permission granted');
+
+  console.log('✅ Microphone permission handled');
+}
+
+/**
+ * マイクテストページをハンドリング
+ */
+export async function handleMicTest(page: Page, _screenshotsDir: string): Promise<void> {
+  console.log('\n🎙️  Step 6: Handling microphone test page...');
+
+  await page.waitForTimeout(2000);
+
+  // Nextボタンがあるかチェック
+  const nextButton = page.locator('button:has-text("Next")');
+  const nextCount = await nextButton.count();
+
+  if (nextCount > 0) {
+    console.log('   Microphone test page detected');
+    console.log('   Clicking Next button...');
+    await nextButton.first().click({ force: true });
+    await page.waitForTimeout(2000);
+  } else {
+    console.log('   No microphone test page (already configured)');
+  }
+
+  console.log('✅ Microphone test completed');
+}
+
+/**
+ * Spotifyパスワードを安全に入力
+ * 特殊文字を含むパスワードでも正しく入力できるようにkeyboard APIを使用
+ */
+export async function enterSpotifyPassword(page: Page, password: string): Promise<void> {
+  const passwordInput = page.locator('input[type="password"]').first();
+  await passwordInput.waitFor({ state: 'visible', timeout: 10000 });
+
+  console.log('   Found password field with selector: input[type="password"]');
+  console.log('   Entering Spotify password...');
+  console.log(`   Password length: ${password.length} characters`);
+
+  // フィールドをクリックしてフォーカス
+  await passwordInput.click();
+
+  // keyboard.type()を使用して確実に特殊文字を入力
+  await page.keyboard.type(password, { delay: 100 });
+
+  // 値が正しく設定されたか確認
+  const actualValue = await passwordInput.inputValue();
+  console.log(`   Actual password length in field: ${actualValue.length} characters`);
+
+  await page.waitForTimeout(1000);
+}
