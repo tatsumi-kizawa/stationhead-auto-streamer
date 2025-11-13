@@ -96,8 +96,8 @@
 **推奨エージェント**: `@browser-automation`
 **推奨コマンド**: `/investigate-stationhead`
 **開始日**: 2025-11-11
-**完了日**: 2025-11-12
-**更新日**: 2025-11-12（Go On Airフロー完全自動化成功、Spotify連携完了）
+**完了日**: 2025-11-13
+**更新日**: 2025-11-13（プレイリスト選択・配信開始完全自動化達成）
 
 #### 調査項目
 - [x] Stationhead URLの特定
@@ -124,16 +124,19 @@
   - プレイリスト選択モーダルの構造を解析
   - 「Add music」ボタンでモーダルを開く
   - 「My playlists」セクションでプレイリスト一覧を表示
-- [x] プレイリスト選択UI
-  - プレイリストのクリック方法を実装
+- [x] プレイリスト選択UI（2025-11-13完了）
+  - プレイリスト名によるプレイリスト選択を実装
+  - 「All songs」ボタンで全曲追加
   - 「Close」ボタンでモーダルを閉じる
-  - 「Next」ボタンで次のステップへ
-- [x] 配信開始/終了ボタン
+  - トーストメッセージ「Added playlists...」の確認
+- [x] 配信開始ボタンの自動化（2025-11-13完了）
   - 「Send Notification」で通知送信
-  - 「GO ON AIR」で配信開始
-  - 配信開始の完全自動化を達成
+  - 「Go on air →」ボタン（矢印付き）で配信開始
+  - **重要発見**: 画面には2つの「Go on air」ボタンが存在（左パネルと右下）、右下の矢印付きボタンをクリックする必要あり
+  - 配信ページ遷移確認: `https://www.stationhead.com/[username]`
+  - プレイリスト曲一覧の表示確認
 - [ ] プレイリスト再生状態の表示（次フェーズ）
-- [ ] ネットワークリクエストの監視（必要に応じて）
+- [ ] Spotifyプレイヤー初期化エラーの対処（既知の課題: Chromiumの制約）
 - [ ] APIエンドポイントの有無（調査結果: Web UIベースで十分）
 
 #### 重要な発見
@@ -184,15 +187,19 @@
 #### 成果物
 - [x] `docs/stationhead-ui-investigation.md` - 調査結果レポート（ログイン + Go On Airフロー完了）
 - [x] `scripts/test-login.ts` - ログイン自動化スクリプト（動作確認済み）
-- [x] `scripts/test-go-on-air.ts` - Go On Airフロー調査スクリプト
+- [x] `scripts/test-go-on-air.ts` - 完全フロー自動化スクリプト（ログイン〜配信開始）
+- [x] `scripts/test-playlist-only.ts` - プレイリスト選択〜配信開始スクリプト（2025-11-13完成）
+- [x] `src/browser/auth.ts` - Stationhead認証モジュール
+- [x] `src/browser/playlist.ts` - プレイリスト選択モジュール（PlaylistSelectorクラス）
 - [x] `scripts/debug-login-button-click.ts` - ボタンクリックデバッグ
 - [x] `scripts/analyze-login-button.ts` - ボタン詳細分析
 - [x] `data/successful-login-method.json` - 成功したログイン方法の記録
 - [x] `data/go-on-air-test-result.json` - Go On Airテスト結果
+- [x] `data/playlist-only-test-result.json` - プレイリスト選択〜配信開始テスト結果
 - [x] `screenshots/test-login-*.png` - ログインフローのスクリーンショット
 - [x] `screenshots/go-on-air-*.png` - Go On Airフローのスクリーンショット
+- [x] `screenshots/playlist-only-*.png` - プレイリスト選択〜配信開始のスクリーンショット
 - [x] `.env.example` - 環境変数テンプレート（SPOTIFY_EMAIL/PASSWORD追加）
-- [ ] プレイリスト選択・配信実行UI調査成果物（次のステップ）
 
 ### 5. 認証方式の調査と実装方針決定 🔍
 **ステータス**: ⚪ 未着手
@@ -289,3 +296,5 @@
 
 ## 更新履歴
 - 2025-11-11: Phase 1開始、プロジェクト初期設定完了
+- 2025-11-12: Go On Airフロー完全自動化成功、Spotify連携完了
+- 2025-11-13: プレイリスト選択・配信開始完全自動化達成、Phase 1主要機能完了

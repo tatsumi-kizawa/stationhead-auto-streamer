@@ -85,8 +85,8 @@ npm start
 npm test
 
 # ブラウザ自動化テスト
-npm run test:login        # ログインテスト
-npm run test:go-on-air    # Go On Airフローテスト（ログイン〜Spotify認証）
+npm run test:go-on-air      # 完全フロー（ログイン〜配信開始）
+npm run test:playlist-only  # プレイリスト選択〜配信開始のテスト
 ```
 
 ### コード品質チェック
@@ -130,7 +130,7 @@ stationhead-auto-streamer/
 
 ## 開発状況
 
-### Phase 1: 基盤構築 - 🟡 進行中
+### Phase 1: 基盤構築 - 🟢 主要機能完了（2025-11-13）
 
 **完了したこと:**
 - ✅ プロジェクトセットアップ（TypeScript, ESLint, Prettier, Jest）
@@ -138,10 +138,13 @@ stationhead-auto-streamer/
 - ✅ Go On Airフロー自動化（番組名入力〜Spotify認証まで）
 - ✅ Spotify連携自動化（新しい6桁コード認証にも対応）
 - ✅ マイク許可の自動化
+- ✅ プレイリスト選択自動化（Add music → プレイリスト選択 → All songs → Close）
+- ✅ 配信開始ボタンの自動化（Send Notification + Go on air）
+- ✅ 配信ページへの遷移確認
 
 **次のステップ:**
-- プレイリスト選択UIの調査
-- 配信開始・停止の自動化
+- セッション永続化機能（Playwright storageState）
+- 配信停止機能の実装
 - プレイリスト終了検知の実装
 
 ## 開発
