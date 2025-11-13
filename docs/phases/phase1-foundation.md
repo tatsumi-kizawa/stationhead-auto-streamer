@@ -91,27 +91,53 @@
 - [ ] `docs/technical-decisions.md` - 技術選定の記録
 
 ### 4. Stationhead Web UI構造調査 🔍
-**ステータス**: 🟡 進行中
+**ステータス**: 🟢 完了
 **優先度**: 最高
 **推奨エージェント**: `@browser-automation`
 **推奨コマンド**: `/investigate-stationhead`
 **開始日**: 2025-11-11
+**完了日**: 2025-11-13
+**更新日**: 2025-11-13（プレイリスト選択・配信開始完全自動化達成）
 
 #### 調査項目
 - [x] Stationhead URLの特定
   - ログインページ: `https://www.stationhead.com/on/sign-in`
   - ログイン後: `https://www.stationhead.com/on/profile`
+  - Go On Airページ: `https://www.stationhead.com/on/go-on-air`
+  - Spotifyコールバック: `https://www.stationhead.com/on/spotifyAuthCallback`
 - [x] ログインページの構造とセレクタ
   - **重要発見**: CSS-in-JSでクラス名が動的に変化する
   - 安定セレクタ: `aria-label`, `placeholder`, テキストベース
 - [x] ログイン自動化の実装
-- [ ] Spotify連携フロー
-- [ ] 配信設定画面の要素
-- [ ] プレイリスト選択UI
-- [ ] 配信開始/終了ボタン
-- [ ] プレイリスト再生状態の表示
-- [ ] ネットワークリクエストの監視
-- [ ] APIエンドポイントの有無
+- [x] Go On Airフローの調査（番組名入力、マイク許可、マイクテスト）
+  - 番組名入力: `input[maxlength="30"]`で特定
+  - マイク許可: `context.grantPermissions(['microphone'])`で対応
+  - マイクテスト: Nextボタンでスキップ可能
+- [x] Spotify連携フロー（完全自動化成功）
+  - **重要発見1**: 「Connect Spotify」はdiv要素（button要素ではない）
+  - **重要発見2**: Spotifyログインは複数段階
+    - メール入力 → 「次へ」 → 6桁コード画面 → 「パスワードでログイン」 → パスワード入力
+  - **重要発見3**: Spotifyの新しい認証方式（6桁コード）への対応が必要
+  - マイク許可は `context.grantPermissions()` で対応
+  - **完全成功**: `keyboard.type()`で特殊文字パスワードも正常入力、Spotify認証完了
+- [x] 配信設定画面の要素（Spotify認証後の画面）
+  - プレイリスト選択モーダルの構造を解析
+  - 「Add music」ボタンでモーダルを開く
+  - 「My playlists」セクションでプレイリスト一覧を表示
+- [x] プレイリスト選択UI（2025-11-13完了）
+  - プレイリスト名によるプレイリスト選択を実装
+  - 「All songs」ボタンで全曲追加
+  - 「Close」ボタンでモーダルを閉じる
+  - トーストメッセージ「Added playlists...」の確認
+- [x] 配信開始ボタンの自動化（2025-11-13完了）
+  - 「Send Notification」で通知送信
+  - 「Go on air →」ボタン（矢印付き）で配信開始
+  - **重要発見**: 画面には2つの「Go on air」ボタンが存在（左パネルと右下）、右下の矢印付きボタンをクリックする必要あり
+  - 配信ページ遷移確認: `https://www.stationhead.com/[username]`
+  - プレイリスト曲一覧の表示確認
+- [ ] プレイリスト再生状態の表示（次フェーズ）
+- [ ] Spotifyプレイヤー初期化エラーの対処（既知の課題: Chromiumの制約）
+- [ ] APIエンドポイントの有無（調査結果: Web UIベースで十分）
 
 #### 重要な発見
 1. **CSS-in-JSによる動的クラス名**:
@@ -122,26 +148,58 @@
 2. **安定したセレクタ戦略**:
    - 優先順位: `aria-label` > `placeholder` > テキストベース > id
    - 例: `page.locator('button:has-text("Log in")').last()`
+   - div要素でもクリック可能: `page.locator('div:has-text("Connect Spotify")')`
 
 3. **環境変数読み込みの問題**:
    - シェル環境変数が優先される
    - 解決策: `dotenv.config({ path: envPath })` で明示的にパス指定
+
+4. **Spotifyの新しい認証方式（2025-11-12発見）**:
+   - メール入力後、6桁のコードがメールに送信される方式に変更
+   - 「パスワードでログイン」ボタンで従来のパスワード方式に切り替え可能
+   - 自動化では「パスワードでログイン」方式を使用
+
+5. **マイク許可の処理**:
+   - ブラウザの許可ダイアログは自動操作不可
+   - Playwrightの `context.grantPermissions(['microphone'])` で事前許可
+
+6. **dotenvライブラリの変数展開問題（2025-11-12発見・解決）**:
+   - **問題**: `.env`ファイルで`$`文字を含むパスワード（例: `Alle!2025$t2`）が`$t2`部分を変数として扱われ失われる
+   - **原因**: dotenvライブラリがデフォルトで変数展開を行う
+   - **解決策**:
+     - `.env`ファイルで`\$`とエスケープ: `SPOTIFY_PASSWORD="Alle!2025\$t2"`
+     - コードで直接パースする関数を実装（`getSpotifyPassword()`）
+   - **実装場所**: `scripts/test-go-on-air.ts:12-20`
+
+7. **Spotifyパスワード入力の完全自動化成功（2025-11-12達成）**:
+   - `keyboard.type()`で特殊文字を含むパスワードを正しく入力
+   - 12文字のパスワード（`$`を含む）が完全に入力されることを確認
+   - Spotifyログイン、権限付与、Stationheadへの戻りまで完全自動化
 
 #### 調査方法
 1. ✅ Chrome DevTools MCPを使用してページ構造を分析
 2. ✅ Playwrightでログインフローを実装
 3. ✅ ボタンクリック方法を複数テストして最適解を発見
 4. ✅ スクリーンショット取得
-5. ⏳ ダッシュボード・配信UIの調査（次のステップ）
+5. ✅ Go On Airフロー全体の自動化（ログイン〜Spotify認証まで）
+6. ⏳ プレイリスト選択・配信実行UIの調査（次のステップ）
 
 #### 成果物
-- [x] `docs/stationhead-ui-investigation.md` - 調査結果レポート（ログインフロー完了）
+- [x] `docs/stationhead-ui-investigation.md` - 調査結果レポート（ログイン + Go On Airフロー完了）
 - [x] `scripts/test-login.ts` - ログイン自動化スクリプト（動作確認済み）
+- [x] `scripts/test-go-on-air.ts` - 完全フロー自動化スクリプト（ログイン〜配信開始）
+- [x] `scripts/test-playlist-only.ts` - プレイリスト選択〜配信開始スクリプト（2025-11-13完成）
+- [x] `src/browser/auth.ts` - Stationhead認証モジュール
+- [x] `src/browser/playlist.ts` - プレイリスト選択モジュール（PlaylistSelectorクラス）
 - [x] `scripts/debug-login-button-click.ts` - ボタンクリックデバッグ
 - [x] `scripts/analyze-login-button.ts` - ボタン詳細分析
 - [x] `data/successful-login-method.json` - 成功したログイン方法の記録
+- [x] `data/go-on-air-test-result.json` - Go On Airテスト結果
+- [x] `data/playlist-only-test-result.json` - プレイリスト選択〜配信開始テスト結果
 - [x] `screenshots/test-login-*.png` - ログインフローのスクリーンショット
-- [ ] 配信UI関連の調査成果物（次のステップ）
+- [x] `screenshots/go-on-air-*.png` - Go On Airフローのスクリーンショット
+- [x] `screenshots/playlist-only-*.png` - プレイリスト選択〜配信開始のスクリーンショット
+- [x] `.env.example` - 環境変数テンプレート（SPOTIFY_EMAIL/PASSWORD追加）
 
 ### 5. 認証方式の調査と実装方針決定 🔍
 **ステータス**: ⚪ 未着手
@@ -238,3 +296,5 @@
 
 ## 更新履歴
 - 2025-11-11: Phase 1開始、プロジェクト初期設定完了
+- 2025-11-12: Go On Airフロー完全自動化成功、Spotify連携完了
+- 2025-11-13: プレイリスト選択・配信開始完全自動化達成、Phase 1主要機能完了
