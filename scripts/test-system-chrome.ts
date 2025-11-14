@@ -1,4 +1,3 @@
-import { BrowserContext, Page } from 'playwright';
 import { chromium } from 'playwright-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import * as fs from 'fs';
@@ -12,18 +11,6 @@ chromium.use(StealthPlugin());
 const envPath = path.join(__dirname, '../.env');
 dotenv.config({ path: envPath });
 
-// Spotifyパスワードは$を含むため、dotenvの変数展開の影響を受ける
-// .envファイルから直接読み取る
-function getSpotifyPassword(): string {
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  const match = envContent.match(/SPOTIFY_PASSWORD="([^"]+)"/);
-  if (match && match[1]) {
-    // バックスラッシュエスケープを解除
-    return match[1].replace(/\\(.)/g, '$1');
-  }
-  return process.env.SPOTIFY_PASSWORD || '';
-}
-
 /**
  * システムChrome + Persistent Profile アプローチのテスト
  *
@@ -34,8 +21,6 @@ function getSpotifyPassword(): string {
  * - 2回目以降: 自動的にログイン済み・連携済み状態
  */
 
-const SHOW_NAME = 'Test Radio Show';
-
 async function testSystemChrome() {
   console.log('🎙️  Starting System Chrome + Persistent Profile test...\n');
   console.log('═══════════════════════════════════════════════════════\n');
@@ -45,7 +30,7 @@ async function testSystemChrome() {
   const chromeProfilePath = path.join(__dirname, '../.chrome-profile');
 
   const context = await chromium.launchPersistentContext(chromeProfilePath, {
-    channel: 'chrome',  // システムにインストールされている実際のChromeを使用
+    channel: 'chrome', // システムにインストールされている実際のChromeを使用
     headless: false,
     slowMo: 500,
     viewport: { width: 1920, height: 1080 },
@@ -53,16 +38,16 @@ async function testSystemChrome() {
     permissions: ['microphone'],
     // Spotify 再生をサポートするための追加設定
     args: [
-      '--autoplay-policy=no-user-gesture-required',  // 自動再生を許可
-      '--disable-blink-features=AutomationControlled',  // 自動化検出を無効化
-      '--use-fake-ui-for-media-stream',  // メディアストリーム UI をスキップ
-      '--use-fake-device-for-media-stream',  // フェイクデバイスを使用
-      '--enable-features=WebRTCPipeWireCapturer',  // WebRTC サポート
+      '--autoplay-policy=no-user-gesture-required', // 自動再生を許可
+      '--disable-blink-features=AutomationControlled', // 自動化検出を無効化
+      '--use-fake-ui-for-media-stream', // メディアストリーム UI をスキップ
+      '--use-fake-device-for-media-stream', // フェイクデバイスを使用
+      '--enable-features=WebRTCPipeWireCapturer', // WebRTC サポート
     ],
   });
 
   // launchPersistentContextは自動的に最初のページを開くので、それを使用
-  const page = context.pages()[0] || await context.newPage();
+  const page = context.pages()[0] || (await context.newPage());
 
   const screenshotsDir = path.join(__dirname, '../screenshots');
   if (!fs.existsSync(screenshotsDir)) {
@@ -82,22 +67,48 @@ async function testSystemChrome() {
     await page.waitForTimeout(2000);
 
     // 現在のURLをチェック（既にログイン済みかどうか）
+    await page.waitForTimeout(2000);
     const currentUrl = page.url();
-    if (currentUrl.includes('/profile') || !currentUrl.includes('/sign-in')) {
+    const isLoggedIn = currentUrl.includes('/profile') || !currentUrl.includes('/sign-in');
+
+    if (isLoggedIn) {
       console.log('✅ 既にログイン済みです');
+      console.log('   セッション永続性テストを実行します...\n');
+
+      // Go On Airページに遷移してSpotify連携状態を確認
+      console.log('🎙️  Go On Airページに遷移します...');
+      await page.goto('https://www.stationhead.com/on/go-on-air');
+      await page.waitForTimeout(3000);
+
+      await page.screenshot({
+        path: path.join(screenshotsDir, 'system-chrome-01-go-on-air.png'),
+        fullPage: true,
+      });
+
+      // Spotify連携状態を確認（"Add music"ボタンの有無）
+      const addMusicButton = page.locator('button:has-text("Add music")');
+      const hasAddMusic = (await addMusicButton.count()) > 0;
+
+      if (hasAddMusic) {
+        console.log('   ✅ Spotify連携済み（Add musicボタン確認）');
+        console.log('   ✅ セッション永続性テスト成功\n');
+      } else {
+        console.log('   ⚠️  Spotify未連携の可能性（Add musicボタンなし）');
+        console.log('   手動でSpotify連携を完了してください...\n');
+      }
+
     } else {
       console.log('⏳ ログインページが表示されています');
-      console.log('   手動でログインしてください...');
+      console.log('   初回セットアップ: 手動でログインしてください...\n');
+
+      await page.screenshot({
+        path: path.join(screenshotsDir, 'system-chrome-01-login-page.png'),
+        fullPage: true,
+      });
     }
 
-    // スクリーンショット保存
-    await page.screenshot({
-      path: path.join(screenshotsDir, 'system-chrome-01-initial.png'),
-      fullPage: true,
-    });
-
     // ユーザーの操作を待つ
-    console.log('\n✋ 準備ができたらEnterキーを押してください...');
+    console.log('✋ 確認が完了したらEnterキーを押してください...');
     await waitForUserInput();
 
     // 最終状態のスクリーンショット
@@ -130,7 +141,6 @@ async function testSystemChrome() {
 
     console.log('⏳ ブラウザを60秒間開いたままにします（確認用）...');
     await page.waitForTimeout(60000);
-
   } catch (error) {
     console.error('\n❌ Error during System Chrome test:', error);
 
