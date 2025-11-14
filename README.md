@@ -85,8 +85,13 @@ npm start
 npm test
 
 # ブラウザ自動化テスト
+
+# アプローチ1: Playwright Chromium（完全自動）
 npm run test:go-on-air      # 完全フロー（ログイン〜配信開始）
 npm run test:playlist-only  # プレイリスト選択〜配信開始のテスト
+
+# アプローチ2: システムChrome + セッション永続化（初回手動、2回目以降自動）
+npm run test:system-chrome  # システムChromeでセッション永続化テスト
 ```
 
 ### コード品質チェック

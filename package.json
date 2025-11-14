@@ -11,6 +11,7 @@
     "test:watch": "jest --watch",
     "test:go-on-air": "ts-node scripts/test-go-on-air.ts",
     "test:playlist-only": "ts-node scripts/test-playlist-only.ts",
+    "test:system-chrome": "ts-node scripts/test-system-chrome.ts",
     "clean": "rm -rf screenshots/*.png data/*.json && echo 'Test artifacts cleaned'",
     "clean:all": "npm run clean && rm -rf screenshots/archive data/archive scripts/archive && echo 'All artifacts and archives cleaned'",
     "lint": "eslint 'src/**/*.{ts,tsx}'",

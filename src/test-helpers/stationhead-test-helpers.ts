@@ -24,9 +24,17 @@ export async function login(
 ): Promise<void> {
   console.log('\n🔐 Step 1: Logging in...');
 
+  // ログイン済みかチェック（"Use email instead"ボタンが存在しない場合）
+  const useEmailButton = page.locator('button:has-text("Use email instead")');
+  const useEmailButtonCount = await useEmailButton.count();
+
+  if (useEmailButtonCount === 0) {
+    console.log('   ✅ Already logged in - skipping login process');
+    return;
+  }
+
   // "Use email instead"ボタンをクリック
   console.log('   Clicking "Use email instead"...');
-  const useEmailButton = page.locator('button:has-text("Use email instead")');
   await useEmailButton.waitFor({ state: 'visible', timeout: 10000 });
   await useEmailButton.click({ force: true });
   await page.waitForTimeout(1000);
