@@ -130,22 +130,34 @@ stationhead-auto-streamer/
 
 ## 開発状況
 
-### Phase 1: 基盤構築 - 🟢 主要機能完了（2025-11-13）
+### 現在のフェーズ
+**Phase 1: 基盤構築** - 🟢 **主要機能完了**（2025-11-13）
 
-**完了したこと:**
-- ✅ プロジェクトセットアップ（TypeScript, ESLint, Prettier, Jest）
-- ✅ Stationheadログイン自動化
-- ✅ Go On Airフロー自動化（番組名入力〜Spotify認証まで）
-- ✅ Spotify連携自動化（新しい6桁コード認証にも対応）
-- ✅ マイク許可の自動化
-- ✅ プレイリスト選択自動化（Add music → プレイリスト選択 → All songs → Close）
-- ✅ 配信開始ボタンの自動化（Send Notification + Go on air）
-- ✅ 配信ページへの遷移確認
+### Phase 1 完了ステータス
 
-**次のステップ:**
-- セッション永続化機能（Playwright storageState）
-- 配信停止機能の実装
-- プレイリスト終了検知の実装
+**✅ 完了したタスク:**
+1. プロジェクト初期設定（Claude Code、MCP設定）
+2. プロジェクトセットアップ（TypeScript, ESLint, Prettier, Jest）
+3. StationheadのWeb UI構造調査（完全）
+4. 認証方式の調査と実装方針決定
+   - セッション永続化（Playwright storageState）実装済み
+   - `data/stationhead-storage.json`でセッション管理
+5. ブラウザ自動化の基本実装（ログイン〜配信開始まで完全自動化）
+   - Stationheadログイン（セッション永続化対応）
+   - Spotify連携（OAuth認証、特殊文字パスワード対応）
+   - Go On Airフロー（番組名入力、マイク許可）
+   - プレイリスト選択（モーダル操作、曲追加）
+   - 配信開始（通知送信、配信ページ遷移）
+
+**⏳ Phase 2で実装予定:**
+- スケジュール管理機能
+- スケジューラー実行エンジン
+- プレイリストループ再生機能
+- 配信終了の自動化
+- エラーハンドリング強化
+- Slack通知機能
+
+詳細は [Phase 1ドキュメント](./docs/phases/phase1-foundation.md) と [Phase 2ドキュメント](./docs/phases/phase2-core-features.md) を参照してください。
 
 ## 開発
 
