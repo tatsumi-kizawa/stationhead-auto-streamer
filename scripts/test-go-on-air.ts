@@ -1,7 +1,16 @@
-import { chromium, BrowserContext, Page } from 'playwright';
+import { BrowserContext, Page } from 'playwright';
+import { chromium } from 'playwright-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import {
+  detectReCaptcha,
+  waitForManualReCaptchaSolution,
+} from '../src/test-helpers/stationhead-test-helpers';
+
+// Stealth Pluginを有効化（自動化検出を回避）
+chromium.use(StealthPlugin());
 
 // プロジェクトルートの.envファイルを明示的に読み込む
 const envPath = path.join(__dirname, '../.env');
@@ -612,7 +621,20 @@ async function loginToSpotify(
       if (loginButton) {
         console.log('   Clicking "Login" button...');
         await loginButton.click({ force: true });
-        await spotifyPage.waitForTimeout(5000);
+        await spotifyPage.waitForTimeout(3000);
+
+        // reCAPTCHAチェック（ログインボタンクリック直後）
+        console.log('   Checking for reCAPTCHA...');
+        const hasRecaptcha = await detectReCaptcha(spotifyPage);
+
+        if (hasRecaptcha) {
+          // reCAPTCHA検出 - 手動解決を促す
+          await waitForManualReCaptchaSolution(spotifyPage, screenshotsDir);
+        } else {
+          console.log('   ✅ No reCAPTCHA detected');
+        }
+
+        await spotifyPage.waitForTimeout(2000);
 
         await spotifyPage.screenshot({
           path: path.join(screenshotsDir, 'go-on-air-11d-after-login.png'),
@@ -803,11 +825,12 @@ async function selectPlaylist(
     const allDivs = Array.from(document.querySelectorAll('div'));
 
     // "songs" を含み、onclickまたはクリックハンドラーを持つdivを探す
+    // ただし "Saved songs" は除外する（実際のプレイリストのみ選択）
     const clickableDivs = allDivs.filter((div) => {
       const text = div.textContent?.trim() || '';
       const hasPlaylistText =
         text.includes('songs') &&
-        !text.includes('My saved songs') &&
+        !text.includes('Saved songs') &&  // "Saved songs" を確実に除外
         !text.includes('Add music');
 
       // クリック可能かチェック
@@ -983,49 +1006,178 @@ async function startBroadcast(
     fullPage: true,
   });
 
-  // "GO ON AIR" ボタンを探す
-  const goOnAirButton = page.locator('button:has-text("GO ON AIR")').first();
+  // "GO ON AIR" ボタンを探して確実にクリック
+  console.log('   Looking for "GO ON AIR" button...');
 
-  if ((await goOnAirButton.count()) === 0) {
-    console.log('   ⚠️  GO ON AIR button not found, trying alternatives...');
+  // 複数のセレクタパターンを試す
+  const goOnAirSelectors = [
+    'button:has-text("GO ON AIR")',
+    'button:has-text("Go on air")',
+    'button:has-text("go on air")',
+  ];
 
-    // 大文字小文字を区別しない検索
-    const alternativeButton = page
-      .locator('button:has-text("Go on air")')
-      .last();
-    if ((await alternativeButton.count()) > 0) {
-      console.log('   Found alternative "Go on air" button');
-      await alternativeButton.click({ force: true });
-      await page.waitForTimeout(5000);
-    } else {
-      const buttons = await page.evaluate(() =>
-        Array.from(document.querySelectorAll('button')).map((btn) =>
-          btn.textContent?.trim()
-        )
-      );
-      console.log('   Available buttons:', buttons);
-      throw new Error('GO ON AIR button not found');
+  let clicked = false;
+
+  for (const selector of goOnAirSelectors) {
+    const button = page.locator(selector).last(); // .last() で最下部のボタンを取得
+    const count = await button.count();
+
+    if (count > 0) {
+      console.log(`   Found button with selector: ${selector} (count: ${count})`);
+
+      // 方法1: Playwright クリック（force: true）
+      try {
+        await button.click({ force: true, timeout: 5000 });
+        console.log('   ✅ Clicked with Playwright (force)');
+        clicked = true;
+        break;
+      } catch (error) {
+        console.log('   ⚠️  Playwright click failed, trying JavaScript click...');
+
+        // 方法2: JavaScriptで直接クリック（より確実）
+        try {
+          await page.evaluate((sel) => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const targetButton = buttons.filter(btn =>
+              btn.textContent?.toLowerCase().includes('go on air')
+            ).pop(); // 最後のボタン
+
+            if (targetButton) {
+              targetButton.click();
+              return true;
+            }
+            return false;
+          }, selector);
+
+          console.log('   ✅ Clicked with JavaScript');
+          clicked = true;
+          break;
+        } catch (jsError) {
+          console.log('   ⚠️  JavaScript click also failed:', jsError);
+        }
+      }
     }
-  } else {
-    console.log('   Clicking "GO ON AIR" button...');
-    await goOnAirButton.click({ force: true });
-    await page.waitForTimeout(5000);
   }
 
+  if (!clicked) {
+    const buttons = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('button')).map((btn) =>
+        btn.textContent?.trim()
+      )
+    );
+    console.log('   Available buttons:', buttons);
+    throw new Error('GO ON AIR button not found or could not be clicked');
+  }
+
+  await page.waitForTimeout(3000);
+
+  // ボタンクリック後の状態を詳細に分析
+  console.log('\n📊 Analyzing post-click state...');
+
+  // エラーメッセージやモーダルをチェック
+  const pageAnalysis = await page.evaluate(() => {
+    const bodyText = document.body.innerText;
+
+    // エラーメッセージを探す
+    const errorKeywords = [
+      'error',
+      'Error',
+      'ERROR',
+      'cannot',
+      'Cannot',
+      'unable',
+      'Unable',
+      'failed',
+      'Failed',
+      'Spotify',
+      '再生',
+      'できない',
+      'エラー',
+    ];
+
+    const foundErrors = errorKeywords.filter((keyword) =>
+      bodyText.includes(keyword)
+    );
+
+    // モーダルやダイアログの存在をチェック
+    const modals = Array.from(
+      document.querySelectorAll('[role="dialog"], [role="alertdialog"], .modal')
+    ).map((el) => ({
+      text: el.textContent?.trim().substring(0, 200),
+      visible:
+        el instanceof HTMLElement &&
+        el.offsetWidth > 0 &&
+        el.offsetHeight > 0,
+    }));
+
+    // すべてのボタンテキストを取得
+    const allButtons = Array.from(document.querySelectorAll('button')).map(
+      (btn) => btn.textContent?.trim()
+    );
+
+    return {
+      currentUrl: window.location.href,
+      bodyTextPreview: bodyText.substring(0, 800),
+      foundErrors,
+      modals,
+      allButtons,
+      hasGoOnAirButton: bodyText.includes('Go on air'),
+    };
+  });
+
+  console.log('   Current URL:', pageAnalysis.currentUrl);
+  console.log('   Has "Go on air" button:', pageAnalysis.hasGoOnAirButton);
+  console.log('   Found error keywords:', pageAnalysis.foundErrors);
+  console.log('   Modals detected:', pageAnalysis.modals.length);
+  if (pageAnalysis.modals.length > 0) {
+    console.log('   Modal content:', JSON.stringify(pageAnalysis.modals, null, 2));
+  }
+  console.log('   Available buttons:', pageAnalysis.allButtons);
+  console.log('\n📝 Page content preview:');
+  console.log(pageAnalysis.bodyTextPreview);
+
   await page.screenshot({
-    path: path.join(screenshotsDir, 'go-on-air-24-broadcasting.png'),
+    path: path.join(screenshotsDir, 'go-on-air-24-after-button-click.png'),
     fullPage: true,
   });
 
-  console.log('✅ Broadcast started!\n');
+  // URLが変わったかチェック
+  if (pageAnalysis.hasGoOnAirButton) {
+    console.log('\n⚠️  WARNING: Still on "Go on air" preparation page!');
+    console.log('   Broadcasting may not have started.');
 
-  // 配信中のUIを確認
-  const broadcastInfo = await page.evaluate(() => {
-    const bodyText = document.body.innerText.substring(0, 500);
-    return { bodyText };
+    // エラーメッセージがある場合は警告
+    if (pageAnalysis.foundErrors.length > 0) {
+      console.log('   ⚠️  Possible errors detected!');
+    }
+  } else {
+    console.log('\n✅ Successfully transitioned to broadcast page!');
+  }
+
+  // さらに5秒待って再度確認
+  await page.waitForTimeout(5000);
+
+  await page.screenshot({
+    path: path.join(screenshotsDir, 'go-on-air-25-broadcasting-final.png'),
+    fullPage: true,
   });
 
-  console.log('   Broadcast page info:', broadcastInfo);
+  const finalAnalysis = await page.evaluate(() => ({
+    url: window.location.href,
+    hasGoOnAirButton: document.body.innerText.includes('Go on air'),
+    bodyPreview: document.body.innerText.substring(0, 300),
+  }));
+
+  console.log('\n📊 Final state after 5 seconds:');
+  console.log('   URL:', finalAnalysis.url);
+  console.log('   Still has "Go on air" button:', finalAnalysis.hasGoOnAirButton);
+  console.log('   Page preview:', finalAnalysis.bodyPreview);
+
+  if (!finalAnalysis.hasGoOnAirButton) {
+    console.log('\n✅ Broadcast confirmed started!\n');
+  } else {
+    console.log('\n⚠️  Broadcast may not have started - still on preparation page\n');
+  }
 }
 
 async function testGoOnAir() {
@@ -1035,12 +1187,26 @@ async function testGoOnAir() {
   const browser = await chromium.launch({
     headless: false,
     slowMo: 500,
+    // Spotify 再生をサポートするための追加設定
+    args: [
+      '--autoplay-policy=no-user-gesture-required',  // 自動再生を許可
+      '--disable-blink-features=AutomationControlled',  // 自動化検出を無効化
+      '--use-fake-ui-for-media-stream',  // メディアストリーム UI をスキップ
+      '--use-fake-device-for-media-stream',  // フェイクデバイスを使用
+      '--enable-features=WebRTCPipeWireCapturer',  // WebRTC サポート
+    ],
   });
 
   const context = await browser.newContext({
     viewport: { width: 1920, height: 1080 },
-    // マイク許可を事前に付与
+    // User-Agent を通常の Chrome に設定（Spotify が自動化ブラウザをブロックしないように）
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    // マイク許可 + メディア再生のパーミッションを追加
     permissions: ['microphone'],
+    // Extra HTTP ヘッダー
+    extraHTTPHeaders: {
+      'Accept-Language': 'ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7',
+    },
   });
 
   const page = await context.newPage();

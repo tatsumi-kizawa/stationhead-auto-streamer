@@ -161,3 +161,120 @@ export async function enterSpotifyPassword(page: Page, password: string): Promis
 
   await page.waitForTimeout(1000);
 }
+
+/**
+ * reCAPTCHAが表示されているかチェック
+ * 複数のreCAPTCHAパターンを検出
+ */
+export async function detectReCaptcha(page: Page): Promise<boolean> {
+  try {
+    // reCAPTCHAの一般的なセレクタをチェック
+    const recaptchaSelectors = [
+      'iframe[src*="recaptcha"]',
+      'iframe[title*="reCAPTCHA"]',
+      '[class*="recaptcha"]',
+      '#recaptcha',
+      'div:has-text("I\'m not a robot")',
+      'div:has-text("あなたは人間ですか")',
+      'div:has-text("Verify you are human")',
+    ];
+
+    for (const selector of recaptchaSelectors) {
+      const element = page.locator(selector).first();
+      if ((await element.count()) > 0) {
+        console.log(`   ⚠️  reCAPTCHA detected with selector: ${selector}`);
+        return true;
+      }
+    }
+
+    // iframe内のreCAPTCHAもチェック
+    const frames = page.frames();
+    for (const frame of frames) {
+      const frameUrl = frame.url();
+      if (frameUrl.includes('recaptcha') || frameUrl.includes('captcha')) {
+        console.log(`   ⚠️  reCAPTCHA iframe detected: ${frameUrl}`);
+        return true;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error('   Error detecting reCAPTCHA:', error);
+    return false;
+  }
+}
+
+/**
+ * reCAPTCHAの手動解決を待つ
+ * ユーザーにreCAPTCHAを解決するように促し、Enterキー入力を待つ
+ */
+export async function waitForManualReCaptchaSolution(
+  page: Page,
+  screenshotsDir: string
+): Promise<void> {
+  console.log('\n🤖 reCAPTCHA detected!');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('⚠️  MANUAL ACTION REQUIRED:');
+  console.log('   1. Please solve the reCAPTCHA in the browser window');
+  console.log('   2. Wait for the page to proceed');
+  console.log('   3. Press ENTER in this terminal when complete');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+  // スクリーンショットを保存
+  try {
+    await page.screenshot({
+      path: path.join(screenshotsDir, `recaptcha-detected-${Date.now()}.png`),
+      fullPage: true,
+    });
+    console.log('📸 Screenshot saved for reference\n');
+  } catch (error) {
+    console.error('Failed to save screenshot:', error);
+  }
+
+  // Enterキー入力を待つ
+  await new Promise<void>((resolve) => {
+    const stdin = process.stdin;
+
+    // TTY（ターミナル）でない場合は自動的に続行
+    if (!stdin.isTTY) {
+      console.log('⚠️  Not running in a TTY, automatically continuing after 10 seconds...');
+      setTimeout(() => {
+        console.log('✅ Continuing automation...\n');
+        resolve();
+      }, 10000);
+      return;
+    }
+
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding('utf8');
+
+    const onData = (key: string) => {
+      // Ctrl+C で終了
+      if (key === '\u0003') {
+        process.exit();
+      }
+      // Enter キー
+      if (key === '\r' || key === '\n') {
+        stdin.setRawMode(false);
+        stdin.pause();
+        stdin.removeListener('data', onData);
+        console.log('✅ Continuing automation...\n');
+        resolve();
+      }
+    };
+
+    stdin.on('data', onData);
+  });
+
+  // reCAPTCHAが解決されたか確認
+  await page.waitForTimeout(2000);
+  const stillHasRecaptcha = await detectReCaptcha(page);
+
+  if (stillHasRecaptcha) {
+    console.log('⚠️  reCAPTCHA still detected. Waiting a bit longer...');
+    await page.waitForTimeout(3000);
+  } else {
+    console.log('✅ reCAPTCHA appears to be solved!\n');
+  }
+}

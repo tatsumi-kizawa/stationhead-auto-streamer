@@ -51,6 +51,9 @@ data/*.sqlite3
 # Session storage
 data/sessions/
 
+# Chrome automation profile (contains login sessions and cookies)
+.chrome-profile/
+
 # Playwright
 .playwright/
 test-results/
