@@ -294,11 +294,101 @@
 - [x] **保留**: `src/browser/stream.ts` - 配信操作（次フェーズで実装）
 - [x] **保留**: `tests/browser/` - 正式なテストコード（次フェーズで実装）
 
-### 7. プレイリスト終了検知の方法調査 🔍
+### 7. システムChrome + Persistent Profile実装 🔍
+**ステータス**: 🟡 進行中
+**優先度**: 高
+**推奨エージェント**: `@browser-automation`
+**依存**: タスク6完了後
+**開始日**: 2025-11-13
+**更新日**: 2025-11-14
+
+#### 目的
+Spotify Web Playback SDKの互換性問題を解決するため、システムにインストールされた実際のChromeブラウザを使用し、セッション情報を永続化するアプローチを実装する。
+
+#### サブタスク
+- [x] Persistent Profile設定の実装
+  - `.chrome-profile/`ディレクトリでセッション管理
+  - `chromium.launchPersistentContext()`を使用
+- [x] セッション永続化テスト
+  - Stationheadログイン状態の永続化 ✅
+  - Spotify連携状態の永続化 ✅
+- [x] Go On Airフロー全体の自動化
+  - 番組名入力 ✅
+  - マイク許可・テスト ✅
+  - プレイリスト選択 ✅
+  - 配信開始 ✅
+- [x] Spotify playerエラー診断機能の実装
+  - ブラウザ機能サポート状況チェック
+  - コンソールエラー収集
+  - 詳細診断レポート出力
+- [ ] Spotify player初期化エラーの解決（進行中）
+  - **現状**: 自動化検出により初期化失敗
+  - **診断結果**: 全API・SDKサポート済みだが初期化拒否される
+  - **次の対策**: ブラウザオプション最小化（対策3）
+
+#### 重要な発見
+
+**1. セッション永続化の成功** ✅
+- Stationheadログイン状態が完全に保持される
+- Spotify連携状態が完全に保持される
+- 2回目以降の実行で手動操作が不要
+
+**2. Spotify player初期化エラーの詳細診断** ⚠️
+```json
+診断結果（2025-11-14）:
+{
+  "エラーメッセージ": "Spotify player failed to initialize, this can sometimes happen if your browser isn't supported.",
+  "ブラウザ機能": {
+    "AudioContext": "✅ サポート",
+    "MediaDevices API": "✅ サポート",
+    "getUserMedia": "✅ サポート",
+    "Spotify SDK": "✅ 読み込み完了",
+    "Spotify.Player": "✅ 存在"
+  },
+  "コンソールエラー": "なし ✅",
+  "結論": "すべてサポートされているが、Spotify SDKが自動化環境を検出して初期化を拒否している可能性が高い"
+}
+```
+
+**3. 実際のデバイスアクセス確認** ✅
+- AirPodsなど実際のマイクデバイスが正常に動作
+- マイク入力を検出（テスト時にAirPodsの音を読み取り）
+
+**4. ブラウザオプションの検証**
+- フェイクデバイス削除済み（`--use-fake-device-for-media-stream`を削除）
+- 現在のオプション:
+  ```typescript
+  args: [
+    '--autoplay-policy=no-user-gesture-required',
+    '--disable-blink-features=AutomationControlled',
+  ]
+  ```
+
+#### 試行済みの対策
+1. ✅ Playwright Chromium（完全自動）→ Spotify playerエラー
+2. ✅ システムChrome + フェイクデバイス削除 → Spotify playerエラー（現状）
+3. ⏳ システムChrome + ブラウザオプション最小化（対策3・次に実施）
+
+#### 成果物
+- [x] `scripts/test-system-chrome.ts` - システムChrome + Persistent Profile実装
+  - Go On Airフロー全体の自動化
+  - Spotify playerエラー診断機能
+- [x] `.chrome-profile/` - セッション永続化ディレクトリ
+- [x] `screenshots/system-chrome-*.png` - 実行時スクリーンショット
+- [x] `data/system-chrome-test-result.json` - テスト結果
+- [ ] Spotify player初期化エラーの完全解決（次の対策実施中）
+
+#### 次のステップ
+**対策3: ブラウザオプション最小化**
+- Playwrightの自動化機能を最小限にする
+- 通常のChromeブラウザに近い状態で起動
+- 自動化検出を回避する
+
+### 8. プレイリスト終了検知の方法調査 🔍
 **ステータス**: ⚪ 未着手
 **優先度**: 中
 **推奨エージェント**: `@browser-automation`
-**依存**: タスク6完了後
+**依存**: タスク7完了後
 
 #### 調査項目
 - [ ] プレイリスト再生状態の表示要素
@@ -336,10 +426,13 @@
 - [x] ブラウザ自動化の基本動作確認
 - [x] 認証方式の実装方針確定
 - [ ] 技術スタックの最終決定（スケジューラー、データ管理方式は次フェーズで決定）
+- [ ] **Spotify player初期化エラーの解決**（進行中、対策3を実施予定）
 
-**Phase 1の主要機能完了**: 2025-11-13
-- Stationheadログイン〜配信開始までの完全自動化達成
-- 次フェーズ（Phase 2）へ移行可能
+**Phase 1の主要機能状態**: 2025-11-14時点
+- ✅ Stationheadログイン〜プレイリスト選択〜配信開始までの完全自動化達成
+- ✅ セッション永続化（ログイン・Spotify連携）成功
+- ⏳ Spotify player初期化エラー対応中（自動化検出回避のための最終調整）
+- ⏳ 完全動作確認後、Phase 2へ移行可能
 
 ## メモ・議論
 - Playwright MCPを活用することで、UI調査が効率化される見込み
@@ -349,3 +442,4 @@
 - 2025-11-11: Phase 1開始、プロジェクト初期設定完了
 - 2025-11-12: Go On Airフロー完全自動化成功、Spotify連携完了
 - 2025-11-13: プレイリスト選択・配信開始完全自動化達成、Phase 1主要機能完了
+- 2025-11-14: システムChrome + Persistent Profile実装、セッション永続化成功、Spotify playerエラー診断機能追加、対策3準備中
