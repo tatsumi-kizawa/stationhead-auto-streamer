@@ -22,11 +22,10 @@
 - **ログ管理**: winston または pino
 
 ## MCPサーバー
-- **Serena MCP**: IDE補助機能
-- **Playwright MCP**: ブラウザ自動化操作（@executeautomation/playwright-mcp-server）
-- **Chrome DevTools MCP**: Chrome DevTools Protocol経由でブラウザ制御・デバッグ（chrome-devtools-mcp）
-  - パフォーマンス分析、ネットワーク監視、スクリーンショット取得
-  - Node.js 22+推奨（現在: Node.js 20.19.5で動作）
+- **Serena MCP**: コードベース操作・IDE補助機能
+- **Chrome DevTools MCP**: ブラウザ自動化の主要ツール（chrome-devtools-mcp）
+  - Chrome DevTools Protocol経由でブラウザ制御
+  - Spotify Web Playback SDK完全対応（唯一の成功アプローチ）
 
 ## 開発ガイドライン
 
@@ -168,59 +167,44 @@
 7. リトライロジックを実装（最大3回）
 8. Playwright MCPサーバーを活用してブラウザ操作を効率化
 
-### ブラウザ自動化の2つのアプローチ
-**重要**: Spotify Web Playback SDK互換性問題への対応として、2つのアプローチを用意
+### MCP-Based自動化アプローチ（本番実装）
+**重要**: Chrome DevTools MCPが唯一Spotify Web Playback SDKを通過する成功アプローチ
 
-#### アプローチ1: Playwright Chromium（完全自動）
-- **ファイル**: `scripts/test-go-on-air.ts`, `scripts/test-playlist-selection.ts`
-- **特徴**:
-  - Playwrightが提供するChromiumを使用
-  - Stealth Pluginで自動化検出を回避
-  - ログインからSpotify連携まで完全自動化
-  - reCAPTCHA検出と手動解決フロー対応
-- **メリット**:
-  - 完全自動実行（人手不要）
-  - CI/CDへの組み込みが容易
-  - 一貫した動作環境
-- **デメリット**:
-  - Spotify Web Playback SDKが完全にサポートされない可能性
-  - "Spotify player failed to initialize"エラーが発生する場合あり
-- **推奨用途**: テスト、検証、開発時の確認
+#### 実装方法
+- **ファイル**:
+  - `scripts/prepare-chrome-for-automation.ts` - Chrome起動スクリプト
+  - `.claude/commands/auto-go-on-air.md` - MCP自動化ワークフロー
 
-#### アプローチ2: システムChrome + Persistent Profile
-- **ファイル**: `scripts/test-system-chrome.ts`
-- **特徴**:
-  - システムにインストールされた実際のChromeを使用
-  - `.chrome-profile/`にセッション情報を永続化
-  - Go On Airフロー全体の自動化（番組名入力〜配信開始）
-  - セッション永続化成功（ログイン・Spotify連携を保持）
-  - Spotify playerエラー診断機能を搭載
-- **実装状況**（2025-11-14時点）:
-  - ✅ セッション永続化成功（ログイン・Spotify連携）
-  - ✅ Go On Airフロー全体の自動化成功
-  - ⏳ Spotify player初期化エラー対応中（自動化検出回避のための調整）
-- **メリット**:
-  - ログイン・Spotify連携が永続化（完全成功 ✅）
-  - 実際のユーザー環境に近い
-  - 実際のマイク/スピーカーデバイスにアクセス可能
-- **デメリット**:
-  - システムChromeのバージョンに依存
-  - CI/CDへの組み込みが困難
-  - **現在**: Spotify Web Playback SDKが自動化検出により初期化拒否（対策検討中）
-- **推奨用途**: 本番運用、長期間のストリーミング（Spotify playerエラー解決後）
+#### 特徴
+- システムChromeをリモートデバッグポート（9222）で起動
+- `.chrome-profile/`でセッション永続化（ログイン・Spotify連携を保持）
+- Claude Code経由でChrome DevTools MCPツールを使用
+- 手動UIクリックなしで完全自動化
 
-#### 現在の課題と対策
-**課題**: Spotify player初期化エラー（2025-11-14時点）
-- **診断結果**: すべてのAPI・SDKがサポートされているが、自動化環境を検出して初期化を拒否
-- **試行済み対策**:
-  1. ✅ Playwright Chromium → エラー
-  2. ✅ システムChrome + フェイクデバイス削除 → エラー
-- **次の対策**: ブラウザオプション最小化（Playwright機能を最小限にして通常Chromeに近づける）
+#### 実行手順
+1. Chrome起動: `npm run prepare:chrome`
+2. Claude Codeでスラッシュコマンド実行: `/auto-go-on-air`
+3. MCPツールが自動的にブラウザ操作を実行
 
-#### 使い分けガイドライン
-- **開発・テスト**: アプローチ1（完全自動）
-- **本番運用**: アプローチ2（Spotify playerエラー解決後）
-- **Spotify再生エラーが発生**: 対策3（ブラウザオプション最小化）を実施中
+#### 成功実績（2025-11-15時点）
+- ✅ セッション永続化成功（ログイン・Spotify連携保持）
+- ✅ Go On Airフロー完全自動化（番組名入力〜配信開始）
+- ✅ Spotify Web Playback SDK完全動作（音楽再生成功）
+- ✅ コンソールエラーなし
+
+#### メリット
+- Spotify playerエラーが発生しない（唯一の成功アプローチ）
+- セッション永続化により2回目以降はログイン不要
+- 実際のマイク/スピーカーデバイスにアクセス可能
+
+#### デメリット
+- エンジニア向け（Claude Code + MCP必要）
+- 非エンジニアへの配布には追加実装が必要（Phase 2で検討）
+
+#### アーカイブされた旧アプローチ
+以下のアプローチはSpotify playerエラーのため使用不可（参考用にarchiveに保存）:
+- `scripts/archive/test-go-on-air.ts` - Playwright Chromiumアプローチ
+- `scripts/archive/test-system-chrome.ts` - Puppeteerアプローチ
 
 ### スケジューラーの原則
 1. 時間の重複を必ずチェック
@@ -251,88 +235,84 @@ stationhead-auto-streamer/
 │   │   ├── auth.ts       # 認証処理
 │   │   └── playlist.ts   # プレイリスト操作
 │   ├── test-helpers/     # テスト用共通関数
-│   ├── scheduler/        # スケジューラー
-│   ├── notification/     # 通知
-│   ├── logger/           # ログ
-│   ├── ui/               # UI
+│   ├── scheduler/        # スケジューラー（Phase 2）
+│   ├── notification/     # 通知（Phase 2）
 │   └── config/           # 設定管理
-├── scripts/              # テストスクリプト
-│   ├── test-go-on-air.ts        # 完全フロー（Spotify連携含む）
-│   ├── test-playlist-selection.ts # プレイリスト選択のみ
-│   └── archive/          # 開発履歴（削除可能）
+├── scripts/              # 自動化スクリプト
+│   ├── prepare-chrome-for-automation.ts  # Chrome起動スクリプト
+│   └── archive/          # 旧アプローチ（参考用）
+├── .claude/commands/     # Claude Code コマンド
+│   └── auto-go-on-air.md # MCP自動化ワークフロー
+├── .chrome-profile/      # Chromeセッション永続化（.gitignore）
 ├── data/                 # データ保存
-│   └── archive/          # 古いテストデータ
 ├── screenshots/          # スクリーンショット
-│   └── archive/          # 古いスクリーンショット
-├── logs/                 # ログファイル
-├── tests/                # テストコード
 ├── docs/                 # ドキュメント
-└── .claude/              # Claude Code設定
+└── tests/                # テストコード（Phase 2）
 ```
 
-## テスト実行とクリーンアップ手順
+## MCP自動化の実行手順
 
-### テスト実行
+### 初回セットアップ
+1. `.env`ファイルに環境変数を設定:
+   ```
+   SHOW_NAME="My Show"
+   PLAYLIST_NAME="My Playlist"
+   ```
+
+2. Chrome起動（セッション永続化）:
+   ```bash
+   npm run prepare:chrome
+   ```
+
+3. Claude Codeでスラッシュコマンド実行:
+   ```
+   /auto-go-on-air
+   ```
+
+### 2回目以降の実行
+セッションが保持されているため、手順2と3のみで実行可能（ログイン不要）。
+
+### クリーンアップ
 ```bash
-# 初回セットアップ（Spotify連携まで）
-npm run test:go-on-air
-
-# プレイリスト選択のみ（既存セッション前提）
-npm run test:playlist
-```
-
-### テスト完了後のクリーンアップ
-```bash
-# 1. テスト成果物のクリーンアップ（スクリーンショット、JSONファイル）
+# テスト成果物削除（スクリーンショット、JSONファイル）
 npm run clean
 
-# 2. アーカイブも含めて完全削除
+# アーカイブも含めて完全削除
 npm run clean:all
 
-# 3. コードの整形
-npm run format
-
-# 4. リント実行
-npm run lint:fix
-
-# 5. 型チェック
-npm run typecheck
+# コード品質チェック
+npm run format && npm run lint:fix && npm run typecheck
 ```
 
-### クリーンアップの内容
-- `npm run clean`: `screenshots/*.png`, `data/*.json` を削除
-- `npm run clean:all`: 上記 + `archive/` ディレクトリも削除
-- `.gitignore`: テスト成果物とarchiveは自動的に除外される
-
 ## 開発フェーズ
-現在: **Phase 1 - 基盤構築（要調査フェーズ含む）** - **主要機能完了** 🎉
+現在: **Phase 1 - 基盤構築** - **完了** ✅
 
-### Phase 1 完了ステータス（2025-11-13時点）
+### Phase 1 完了ステータス（2025-11-15時点）
 
 **完了したタスク**:
 1. ✅ プロジェクト初期設定（Claude Code、MCP設定）
 2. ✅ プロジェクトセットアップ（package.json、tsconfig.json、ESLint、Prettier）
 3. ✅ StationheadのWeb UI構造調査（完全）
-4. ✅ 認証方式の調査と実装方針決定（storageState、セッション永続化）
-5. ✅ ブラウザ自動化の基本実装（ログイン〜配信開始まで完全自動化）
-   - Stationheadログイン（セッション永続化対応）
-   - Spotify連携（OAuth認証、特殊文字パスワード対応）
-   - Go On Airフロー（番組名入力、マイク許可）
-   - プレイリスト選択（モーダル操作、曲追加）
-   - 配信開始（通知送信、配信ページ遷移）
+4. ✅ 認証方式の調査と実装方針決定（セッション永続化）
+5. ✅ **MCP-Based自動化の完全実装**（ログイン〜配信開始まで完全自動化）
+   - Chrome起動スクリプト実装
+   - Chrome DevTools MCP連携
+   - セッション永続化（ログイン・Spotify連携保持）
+   - Go On Airフロー完全自動化
+   - **Spotify Web Playback SDK完全動作確認**（音楽再生成功）
 
-**保留・次フェーズで実装**:
-- ⏳ 技術スタックの最終決定（スケジューラー、データ管理）
-- ⏳ プレイリスト終了検知の方法調査
-- ⏳ 配信終了の自動化
-- ⏳ プレイリストループ再生機能
+**Phase 1での重要な発見**:
+- Chrome DevTools MCPが**唯一**Spotify Web Playback SDKを通過
+- Playwright ChromiumアプローチはSpotify player初期化エラー
+- セッション永続化により2回目以降はログイン不要
 
 ### 次のステップ（Phase 2へ）:
-- スケジュール管理機能の実装
-- プレイリストループ再生機能
+- 配信スケジュール管理機能の実装
+- プレイリスト終了検知とループ再生機能
 - 配信終了の自動化
 - エラーハンドリングの強化
 - Slack通知機能の実装
+- 非エンジニア向けUI実装の検討
 
 ## 注意事項
 - StationheadのUIは変更される可能性があるため、柔軟な設計を心がける

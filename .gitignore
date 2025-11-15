@@ -53,6 +53,7 @@ data/sessions/
 
 # Chrome automation profile (contains login sessions and cookies)
 .chrome-profile/
+.chrome-profile-puppeteer/
 
 # Playwright
 .playwright/
