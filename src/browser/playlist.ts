@@ -55,9 +55,7 @@ export class PlaylistSelector {
     try {
       // Step 1: プレイリスト名を含む要素を探してクリック
       // "My playlists"セクション配下でプレイリスト名を探す
-      const playlistNameLocator = this.page
-        .locator(`text="${playlistName}"`)
-        .first();
+      const playlistNameLocator = this.page.locator(`text="${playlistName}"`).first();
 
       const count = await playlistNameLocator.count();
       if (count === 0) {
@@ -239,11 +237,13 @@ export class PlaylistSelector {
 
         // "My playlists"の親要素配下で "songs" を含む要素を探す
         const parentSection = myPlaylistsElement.parentElement;
-        const playlistElements = Array.from(
-          parentSection.querySelectorAll('*')
-        ).filter((el) => {
+        const playlistElements = Array.from(parentSection.querySelectorAll('*')).filter((el) => {
           const text = el.textContent?.trim() || '';
-          return text.includes('songs') && !text.includes('All songs') && !text.includes('My saved songs');
+          return (
+            text.includes('songs') &&
+            !text.includes('All songs') &&
+            !text.includes('My saved songs')
+          );
         });
 
         const playlists: string[] = [];
@@ -251,7 +251,10 @@ export class PlaylistSelector {
         playlistElements.forEach((el) => {
           const text = el.textContent?.trim() || '';
           // "New Music Wednesday\n79 songs" のような形式を想定
-          const lines = text.split('\n').map((line) => line.trim()).filter((line) => line);
+          const lines = text
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line);
 
           // プレイリスト名を抽出（"XX songs"より前の部分）
           for (let i = 0; i < lines.length; i++) {
